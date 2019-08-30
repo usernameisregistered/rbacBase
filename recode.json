@@ -1,0 +1,10 @@
+[
+    {"message":"没有查询到相应的信息","returnCode":1001},
+    {"message":"你的账户已被禁用","returnCode":1002},
+    {"message":"数据更新失败","returnCode":1003},
+    {"message":"不允许的请求头部类型content-type","returnCode":1004},
+    {"message":"缺少公参publicArgs","returnCode":1005},
+    {"message":"公参publicArgs信息内容有误","returnCode":1006},
+    {"message":"参数校验不通过","returnCode":1007},
+    {"message":"缺少必要的参数","returnCode":1008}
+]
