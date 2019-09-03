@@ -15,7 +15,7 @@ class CreateManagersTable extends Migration
     {
         Schema::create('managers', function (Blueprint $table) {
             $table->mediumIncrements('id')->comment('管理员编号');
-            $table->string('manager_name',50)->comment('管理员昵称');
+            $table->string('manager_name',50)->unique()->index()->comment('管理员昵称');
             $table->string('manager_email',50)->unique()->comment('管理员邮箱');
             $table->char('manager_phone',11)->unique()->comment('管理员手机');
             $table->string('manager_truename',20)->comment('管理员真实姓名');
@@ -27,7 +27,8 @@ class CreateManagersTable extends Migration
             $table->timestamp('manager_lastlogin_time')->nullable()->comment('管理员上一次登录时间');
             $table->string('manager_lastlogin_ip',15)->nullable()->comment('管理员上一次登录ip');
             $table->string('manager_password',32)->comment('管理员密码');
-            $table->string('manager_token',100)->nullable()->comment('管理员token');
+            $table->string('manager_token',32)->nullable()->comment('管理员token');
+            $table->boolean('is_login')->default(false)->comment('管理员是否登录');
             $table->timestamp('manager_register_time')->nullable()->comment('管理员注册时间');
             $table->timestamp('manager_update_time')->nullable()->comment('管理员更新时间');
         });

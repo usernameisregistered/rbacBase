@@ -12,6 +12,7 @@ class ManagersTableSeeder extends Seeder
     public function run()
     {
         DB::table('managers')->insert([
+            'id'=> 1000,
             'manager_name' => 'admin',
             'manager_email' => 'admin@admin.com',
             'manager_phone'=>'18064120655',
@@ -26,6 +27,14 @@ class ManagersTableSeeder extends Seeder
             'manager_phone'=>'18064120653',
             'manager_truename'=>'test',
             'manager_group'=>'2',
+            'manager_password'=>md5("12345678"),
+            'manager_register_time'=>now()
+        ]);DB::table('managers')->insert([
+            'manager_name' => 'demo',
+            'manager_email' => 'demo@demo.com',
+            'manager_phone'=>'18064120652',
+            'manager_truename'=>'demo',
+            'manager_group'=>'1',
             'manager_password'=>md5("12345678"),
             'manager_register_time'=>now()
         ]);

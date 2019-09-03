@@ -12,6 +12,7 @@ class ManagerGroupsTableSeeder extends Seeder
     public function run()
     {
         DB::table('manager_groups')->insert([
+            'id'=>100,
             'group_name' => '超级管理员',
             'group_desc' => '具有至高无上的权利',
             'group_create_time'=>now()

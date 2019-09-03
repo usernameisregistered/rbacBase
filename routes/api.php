@@ -14,4 +14,7 @@ use Illuminate\Http\Request;
 */
 Route::namespace('Admin')->group(function () {
     Route::any('/admin/login/login','LoginController@login');
+    Route::any('/admin/login/logout','LoginController@logout');
+    Route::apiResource('/admin/manager', 'ManagerController');
+    Route::apiResource('/admin/managerGroup', 'ManagerGroupController');
 });
