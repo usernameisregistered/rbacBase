@@ -84,12 +84,20 @@ class ManagerController extends Controller
                     'returnCode' => 1008,
                 ]);
             }
-            if($request->input("manager_phone")){
-                $this->isUnique('manager_phone',$request->input("manager_phone"));
-                $insertDate['manager_phone'] = $request->input("manager_phone");
+            if($request->input("manager_email")){
+                $this->isUnique('manager_email',$request->input("manager_email"));
+                $insertDate['manager_email'] = $request->input("manager_email");
             }else{
                 return response()->json([
-                    'message' => '缺少必要的参数manager_phone',
+                    'message' => '缺少必要的参数manager_email',
+                    'returnCode' => 1008,
+                ]);
+            }
+            if($request->input("manager_password")){
+                $insertDate['manager_password'] = md5($request->input("manager_password"));
+            }else{
+                return response()->json([
+                    'message' => '缺少必要的参数manager_password',
                     'returnCode' => 1008,
                 ]);
             }

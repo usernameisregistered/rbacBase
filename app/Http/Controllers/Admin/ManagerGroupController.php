@@ -15,7 +15,7 @@ class ManagerGroupController extends Controller
      */
     public function index(Request $request)
     {   
-        $groupList = DB::table('manager_groups')->select('id as group_id','group_name','group_desc',DB::raw('if(group_isenabled =1,"启用","禁用") as group_isenabled'),'group_create_time')->get();
+        $groupList = DB::table('manager_groups')->select('id as group_id','group_name','group_desc',DB::raw('if(group_isenabled =1,"启用","禁用") as group_isenabled'),'group_create_time','group_disabled_description','group_disabled_time','group_update_time')->get();
         return response()->json([
             'message' => '成功',
             "dataInfo"=>$groupList,
@@ -38,59 +38,41 @@ class ManagerGroupController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            if($request->input("manager_name")){
-                $this->isUnique('manager_name',$request->input("manager_name"));
-                $insertDate['updateDate'] = $request->input("manager_name");
+            if($request->input("group_name")){
+                $this->isUnique('group_name',$request->input("group_name"));
+                $insertDate['group_name'] = $request->input("group_name");
             }else{
                 return response()->json([
-                    'message' => '缺少必要的参数manager_name',
+                    'message' => '缺少必要的参数group_name',
                     'returnCode' => 1008,
                 ]);
             }
-            if($request->input("manager_email")){
-                $this->isUnique('manager_email',$request->input("manager_email"));
-                $insertDate['manager_email'] = $request->input("manager_email");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_email',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_phone")){
-                $this->isUnique('manager_phone',$request->input("manager_phone"));
-                $insertDate['manager_phone'] = $request->input("manager_phone");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_phone',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_truename")){
-                $insertDate['manager_truename'] = $request->input("manager_truename");
+            if($request->input("group_desc")){
+                $insertDate['group_desc'] = $request->input("group_desc");
             }
             if($request->input("manager_group")){
                 $insertDate['manager_group'] = $request->input("manager_group");
             }
-            if($request->input("manager_isenabled")){
-                $insertDate['manager_isenabled'] = $request->input("manager_isenabled");
-                if($insertDate['manager_isenabled'] == 0){
+            if($request->input("group_isenabled")){
+                $insertDate['group_isenabled'] = $request->input("group_isenabled");
+                if($insertDate['group_isenabled'] == 0){
                     if($request->input("manager_disabled_description")){
-                        $insertDate['manager_disabled_description'] = $request->input("manager_disabled_description");
-                        $insertDate['manager_disabled_time'] = date('Y-m-d H:i:s', time());
+                        $insertDate['group_disabled_description'] = $request->input("group_disabled_description");
+                        $insertDate['group_disabled_time'] = date('Y-m-d H:i:s', time());
                     }else{
                         return response()->json([
-                            'message' => '缺少必要的参数manager_disabled_description',
+                            'message' => '缺少必要的参数group_disabled_description',
                             'returnCode' => 1008,
                         ]);
                     }
                 }
             }else{
-                $insertDate['manager_isenabled'] = 1;
-                $insertDate['manager_disabled_description'] = '';
-                $insertDate['manager_disabled_time'] = '';
+                $insertDate['group_isenabled'] = 1;
+                $insertDate['group_disabled_description'] = '';
+                $insertDate['group_disabled_time'] = '';
             }
-            $insertDate['manager_register_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('managers')->insert($insertDate);
+            $insertDate['group_create_time'] = date('Y-m-d H:i:s', time());
+            $result = DB::table('manager_groups')->insert($insertDate);
             if($result){
                 return response()->json([
                     'message' => '添加管理员组成功',
@@ -121,7 +103,7 @@ class ManagerGroupController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            $managerInfo = DB::table('manager_groups')->where('id',$request->input("group_id"))->select('id as group_id','group_name','group_desc',DB::raw('if(group_isenabled =1,"启用","禁用") as group_isenabled'),'group_create_time','group_update_time')->first();
+            $managerInfo = DB::table('manager_groups')->where('id',$request->input("group_id"))->select('id as group_id','group_name','group_desc',DB::raw('if(group_isenabled =1,"启用","禁用") as group_isenabled'),'group_create_time','group_disabled_description','group_disabled_time','group_update_time')->first();
             if($managerInfo){
                 return response()->json([
                     'message' => '成功',
@@ -154,43 +136,32 @@ class ManagerGroupController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            if($request->input("manager_name")){
-                $this->isUnique('manager_name',$request->input("manager_name"));
-                $updateDate['updateDate'] = $request->input("manager_name");
+            if($request->input("group_name")){
+                $this->isUnique('group_name',$request->input("group_name"));
+                $updateDate['group_name'] = $request->input("group_name");
             }
-            if($request->input("manager_email")){
-                $this->isUnique('manager_email',$request->input("manager_email"));
-                $updateDate['manager_email'] = $request->input("manager_email");
+            if($request->input("group_desc")){
+                $updateDate['group_desc'] = $request->input("group_desc");
             }
-            if($request->input("manager_phone")){
-                $this->isUnique('manager_phone',$request->input("manager_phone"));
-                $updateDate['manager_phone'] = $request->input("manager_phone");
-            }
-            if($request->input("manager_truename")){
-                $updateDate['manager_truename'] = $request->input("manager_truename");
-            }
-            if($request->input("manager_group")){
-                $updateDate['manager_group'] = $request->input("manager_group");
-            }
-            if($request->input("manager_isenabled")){
-                $updateDate['manager_isenabled'] = $request->input("manager_isenabled");
-                if($updateDate['manager_isenabled'] == 0){
-                    if($request->input("manager_disabled_description")){
-                        $updateDate['manager_disabled_description'] = $request->input("manager_disabled_description");
-                        $updateDate['manager_disabled_time'] = date('Y-m-d H:i:s', time());
+            if($request->input("group_isenabled")){
+                $updateDate['group_isenabled'] = $request->input("group_isenabled");
+                if($updateDate['group_isenabled'] == 0){
+                    if($request->input("group_disabled_description")){
+                        $updateDate['group_disabled_description'] = $request->input("group_disabled_description");
+                        $updateDate['group_disabled_time'] = date('Y-m-d H:i:s', time());
                     }else{
                         return response()->json([
-                            'message' => '缺少必要的参数manager_disabled_description',
+                            'message' => '缺少必要的参数group_disabled_description',
                             'returnCode' => 1008,
                         ]);
                     }
                 }else{
-                    $updateDate['manager_disabled_description'] = '';
-                    $updateDate['manager_disabled_time'] = '';
+                    $updateDate['group_disabled_description'] = '';
+                    $updateDate['group_disabled_time'] = '';
                 }
             }
-            $updateDate['manager_update_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('managers')->where('id', $request->input("manager_id"))->update($updateDate);
+            $updateDate['group_update_time'] = date('Y-m-d H:i:s', time());
+            $result = DB::table('manager_groups')->where('id', $request->input("id"))->update($updateDate);
             if($result){
                 return response()->json([
                     'message' => '修改成功',
@@ -251,6 +222,16 @@ class ManagerGroupController extends Controller
             return response()->json([
                 'message' => '您要修改的角色正在被使用',
                 'returnCode' => 1013,
+            ]);
+        }
+    }
+
+    protected function isUnique($field,$value){
+        $result = DB::table('manager_groups')->where($field, $value)->exists();
+        if($result){
+            return response()->json([
+                'message' => '您要修改的数据已经存在',
+                'returnCode' => 1012,
             ]);
         }
     }

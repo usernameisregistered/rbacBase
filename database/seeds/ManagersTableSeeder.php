@@ -17,7 +17,7 @@ class ManagersTableSeeder extends Seeder
             'manager_email' => 'admin@admin.com',
             'manager_phone'=>'18064120655',
             'manager_truename'=>'admin',
-            'manager_group'=>'1',
+            'manager_group'=>'100',
             'manager_password'=>md5("12345678"),
             'manager_register_time'=>now()
         ]);
@@ -26,7 +26,7 @@ class ManagersTableSeeder extends Seeder
             'manager_email' => 'test@test.com',
             'manager_phone'=>'18064120653',
             'manager_truename'=>'test',
-            'manager_group'=>'2',
+            'manager_group'=>'101',
             'manager_password'=>md5("12345678"),
             'manager_register_time'=>now()
         ]);DB::table('managers')->insert([
@@ -34,7 +34,7 @@ class ManagersTableSeeder extends Seeder
             'manager_email' => 'demo@demo.com',
             'manager_phone'=>'18064120652',
             'manager_truename'=>'demo',
-            'manager_group'=>'1',
+            'manager_group'=>'101',
             'manager_password'=>md5("12345678"),
             'manager_register_time'=>now()
         ]);
