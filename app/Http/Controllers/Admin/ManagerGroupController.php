@@ -95,13 +95,9 @@ class ManagerGroupController extends Controller
             $updateData = array();
             if($request->input("name")){
                 $info = $this->isUnique('group_name',$request->input("name"));
-                if($info){
-                    return response()->json([
-                        'message' => '你传入的参数name的值已存在',
-                        'returnCode' => 1011,
-                    ]);
+                if(!$info){
+                    $updateData['group_name'] = $request->input("name");
                 }
-                $updateData['group_name'] = $request->input("name");
             }
             if($request->input("group_desc")){
                 $updateData['group_desc'] = $request->input("group_desc");

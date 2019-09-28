@@ -14,12 +14,12 @@ class CreateManagersTable extends Migration
     public function up()
     {
         Schema::create('managers', function (Blueprint $table) {
-            $table->string('manager_id',32)->primary()->comment('管理员编号');
+            $table->char('manager_id',32)->primary()->comment('管理员编号');
             $table->string('manager_name',50)->unique()->comment('管理员昵称');
             $table->string('manager_email',50)->unique()->comment('管理员邮箱');
             $table->char('manager_phone',11)->unique()->comment('管理员手机');
             $table->string('manager_truename',20)->comment('管理员真实姓名');
-            $table->string('manager_password',32)->comment('管理员密码');
+            $table->char('manager_password',32)->comment('管理员密码');
             $table->boolean('manager_isSystem')->default(false)->comment('系统是系统内置 true 内置 0 外置');
             $table->string('group_id',32)->comment('管理员所属角色');
             $table->boolean('manager_isEnabled')->default(true)->comment('管理员是否启用 true 启用 0 禁用');

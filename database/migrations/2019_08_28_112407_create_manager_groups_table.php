@@ -14,7 +14,7 @@ class CreateManagerGroupsTable extends Migration
     public function up()
     {
         Schema::create('manager_groups', function (Blueprint $table) {
-            $table->string('group_id',32)->primary()->commit("角色编号");
+            $table->char('group_id',32)->primary()->commit("角色编号");
             $table->string('group_name',20)->unique()->commit("角色昵称");
             $table->string('group_desc',200)->nullable()->commit("角色描述");
             $table->boolean('group_isSystem')->default(false)->comment('角色内置 true 内置 0 外置');

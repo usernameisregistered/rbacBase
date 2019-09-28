@@ -8,118 +8,92 @@ use Illuminate\Support\Facades\DB;
 
 class ModuleController extends Controller
 {
-    protected $groupList = null;
-    public function __construct(){
-        $this->groupList =  DB::table('manager_groups')->where('group_isenabled',1)->select('id','group_name')->get(); 
-    }
+    protected $moduleList = array();
     /**
-     * Display a listing of the resource.
+     * 模块列表
      *
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {   
-        $list = DB::table('modules')->select('id as module_id','module_name','module_pid','module_desc','module_creator','module_accendant','module_version','module_operate','module_create_time','module_update_time')->toArray();        
+        $list = DB::table('modules')->select('module_id as id','module_title as title','pid','module_desc as desc','module_operate as operate','module_create_time as createTime')->get();
+        $tempList = array();
+        foreach($list as $value){
+            $tempList[] = (Array)$value;
+        }
         return response()->json([
             'message' => '成功',
-            "dataInfo"=>$list,
+            "dataInfo"=>$this->getTree($tempList,0),
             'returnCode' => 1000,
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
+     * 添加模块
+     * 
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        $insertDate = array();
-        if(!$request->input("module_id")){
+        $insertData = array();
+        if($request->input("title")){
+            $info = $this->isUnique('module_title',$request->input("title"));;
+            if($info){
+                return response()->json([
+                    'message' => '你传入的参数name的值已存在',
+                    'returnCode' => 1011,
+                ]);
+            }
+            $insertData['module_title'] = $request->input("title");
+        }else{
             return response()->json([
-                'message' => '缺少必要的参数module_id',
+                'message' => '缺少必要的参数title',
                 'returnCode' => 1008,
             ]);
+        }
+        if($request->input("desc")){
+            $insertData['module_desc'] = $request->input("module_desc");
         }else{
-            if($request->input("module_name")){
-                $this->isUnique('module_name',$request->input("module_name"));
-                $insertDate['module_name'] = $request->input("module_name");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数module_name',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("module_pid")){
-                $insertDate['module_pid'] = $request->input("module_pid");
-            }
-            if($request->input("module_desc")){
-                $insertDate['module_desc'] = $request->input("module_desc");
-            }
-            if($request->input("module_creator")){
-                $insertDate['module_creator'] = $request->input("module_creator");
-            }
-            if($request->input("module_accendant")){
-                $insertDate['module_accendant'] = $request->input("module_accendant");
-            }
-            if($request->input("module_version")){
-                $insertDate['module_version'] = $request->input("module_version");
-            }
-            if($request->input("module_operate")){
-                $insertDate['module_operate'] = $request->input("module_operate");
-            }
-            $insertDate['module_create_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('modules')->insert($insertDate);
-            if($result){
-                return response()->json([
-                    'message' => '添加模块成功',
-                    'dataInfo'=>'',
-                    'returnCode' => 1000,
-                ]);
-            }else{
-                return response()->json([
-                    'message' => '添加模块失败',
-                    'dataInfo'=>'',
-                    'returnCode' => 1003,
-                ]);
-            }
+            return response()->json([
+                'message' => '缺少必要的参数desc',
+                'returnCode' => 1008,
+            ]);
+        }
+        if($request->input("icon")){
+            $insertData['module_icon'] = $request->input("icon");
+        }
+        if($request->input("path")){
+            $insertData['module_path'] = $request->input("path");
+        }
+        if($request->input("operate")){
+            $insertData['module_operate'] = $request->input("operate");
+        }
+        if($request->input("pid")){
+            $insertData['pid'] = $request->input("pid");
+        }else{
+            $insertData['pid'] = 0;
+        }
+        $insertData['module_create_time'] = date('Y-m-d H:i:s', time());
+        $insertData['module_id'] = md5($request->input("title").now());
+        $result = DB::table('modules')->insert($insertData);
+        if($result){
+            return response()->json([
+                'message' => '添加模块成功',
+                'dataInfo'=>'',
+                'returnCode' => 1000,
+            ]);
+        }else{
+            return response()->json([
+                'message' => '添加模块失败',
+                'dataInfo'=>'',
+                'returnCode' => 1003,
+            ]);
         }
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Request $request)
-    {
-        if(!$request->input("module_id")){
-            return response()->json([
-                'message' => '缺少必要的参数module_id',
-                'returnCode' => 1008,
-            ]);
-        }else{
-            $moduleInfo = DB::table('modules')->where('id', $request->input("module_id"))->select('id as module_id','module_name','module_pid','module_desc','module_creator','module_accendant','module_version','module_operate','module_create_time','module_update_time')->first();
-            if($moduleInfo){
-                return response()->json([
-                    'message' => '成功',
-                    'dataInfo'=>$moduleInfo,
-                    'returnCode' => 1000,
-                ]);
-            }else{
-                return response()->json([
-                    'message' => '没有查询到相应的信息',
-                    'dataInfo'=>'',
-                    'returnCode' => 1001,
-                ]);
-            }
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
+     * 修改模块
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -128,41 +102,25 @@ class ModuleController extends Controller
     public function update(Request $request)
     {   
         $updateDate = array();
-        if(!$request->input("module_id")){
+        if(!$request->input("id")){
             return response()->json([
-                'message' => '缺少必要的参数module_id',
+                'message' => '缺少必要的参数id',
                 'returnCode' => 1008,
             ]);
         }else{
-            if($request->input("module_name")){
-                $this->isUnique('module_name',$request->input("module_name"));
-                $updateDate['module_name'] = $request->input("module_name");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数module_name',
-                    'returnCode' => 1008,
-                ]);
+            if($request->input("title")){
+                $info = $this->isUnique('module_title',$request->input("title"));;
+                if(!$info){
+                    $updateDate['module_title'] = $request->input("title");
+                }
             }
-            if($request->input("module_pid")){
-                $updateDate['module_pid'] = $request->input("module_pid");
+            if($request->input("desc")){
+                $updateDate['module_desc'] = $request->input("desc");
             }
-            if($request->input("module_desc")){
-                $updateDate['module_desc'] = $request->input("module_desc");
+            if($request->input("operate")){
+                $updateDate['module_operate'] = $request->input("operate");
             }
-            if($request->input("module_creator")){
-                $updateDate['module_creator'] = $request->input("module_creator");
-            }
-            if($request->input("module_accendant")){
-                $updateDate['module_accendant'] = $request->input("module_accendant");
-            }
-            if($request->input("module_version")){
-                $updateDate['module_version'] = $request->input("module_version");
-            }
-            if($request->input("module_operate")){
-                $updateDate['module_operate'] = $request->input("module_operate");
-            }
-            $updateDate['module_update_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('modules')->where('id', $request->input("manager_id"))->update($updateDate);
+            $result = DB::table('modules')->where('module_id', $request->input("id"))->update($updateDate);
             if($result){
                 return response()->json([
                     'message' => '修改成功',
@@ -187,13 +145,20 @@ class ModuleController extends Controller
      */
     public function destroy(Request $request)
     {
-        if(!$request->input("module_id")){
+        if(!$request->input("id")){
             return response()->json([
                 'message' => '缺少必要的参数module_id',
                 'returnCode' => 1008,
             ]);
         }else{
-            $result = DB::table('modules')->where('id', $request->input("module_id"))->delete();
+            if(DB::table('modules')->where('pid', $request->input("id"))->exists()){
+                return response()->json([
+                    'message' => '请优先删除其子节点',
+                    'dataInfo'=>'',
+                    'returnCode' => 1003,
+                ]);
+            }
+            $result = DB::table('modules')->where('module_id', $request->input("id"))->delete();
             if($result){
                 return response()->json([
                     'message' => '删除成功',
@@ -210,14 +175,23 @@ class ModuleController extends Controller
         }
     }
     
-    protected function isUnique($field,$value){
-        $result = DB::table('managers')->where($field, $value)->exists();
-        if($result){
-            return response()->json([
-                'message' => '您要修改的数据已经存在',
-                'returnCode' => 1012,
-            ]);
+    protected function getTree($array,$pid=0){
+        $items = array();
+        foreach($array as $value){
+            $items[$value['id']] = $value;
         }
+        $tree = array();
+        foreach($items as $key => $item){
+            if(isset($items[$item['pid']])){
+                $items[$item['pid']]['children'][] = &$items[$key];
+            }else{
+                $tree[] = &$items[$key];
+            }
+        }
+        return $tree;
     }
 
+    protected function tree($field,$value){
+        return !!DB::table('modules')->where($field, $value)->exists();
+    }
 }
