@@ -35,12 +35,12 @@ class CheckRequest
                 ]);
             }else if(!Cache::has($request->header("publicArgs"))){
                 return response()->json([
-                    'message'=>'参数publicArg无效',
+                    'message'=>'token无效,请重新登录',
                     'returnCode' =>1005
                 ]);
             }else if(Cache::get($request->header("publicArgs")) != $request->header("token")){
                 return response()->json([
-                    'message'=>'token无效,请重新登录',
+                    'message'=>'token不正确',
                     'returnCode' =>1005
                 ]);
             }

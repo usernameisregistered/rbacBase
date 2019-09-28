@@ -5,15 +5,11 @@ namespace App\Http\Controllers\admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Str;
 class ManagerController extends Controller
 {
-    protected $groupList = null;
-    public function __construct(){
-        $this->groupList =  DB::table('manager_groups')->where('group_isenabled',1)->select('id','group_name')->get(); 
-    }
     /**
-     * Display a listing of the resource.
+     * 管理员列表
      *
      * @return \Illuminate\Http\Response
      */
@@ -25,24 +21,7 @@ class ManagerController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            $list = DB::table('managers')->where('manager_isdelete',0)->select('id as manager_id','manager_name','manager_email','manager_phone','manager_truename','manager_group', DB::raw('if(manager_isenabled =1,"启用","禁用") as manager_isenabled'),'manager_lastlogin_time','manager_lastlogin_ip','manager_register_time')->take($request->input("offset"))->skip(($request->input("page") -1) * $request->input("offset"))->get();  
-            foreach($list as $value){
-                $tempList = array();
-                if(strpos($value->manager_group,',')){
-                    $tempList = explode(',',$value->manager_group);
-                }else{
-                    array_push($tempList,$value->manager_group);
-                }
-                $result = array();
-                foreach($tempList as $v){
-                    foreach($this->groupList as $item){
-                        if($item->id == $v ){
-                            array_push($result,$item->group_name);
-                        }
-                    }
-                }
-                $value->manager_group = implode(',',$result);
-            }
+            $list = DB::table('managers')->select('manager_id as id','manager_name as name','manager_email as email','manager_phone as phone','manager_truename as truename','manager_groups.group_name as groupNname', DB::raw('if(manager_isenabled =1,"启用","禁用") as isEnabled'),"manager_disabled_description as disabledDdescription","manager_disabled_time as disabledTime",'manager_lastlogin_time as lastLoginTime','manager_lastlogin_ip as lastLoginIP','manager_register_time as registerTime',"manager_update_time as updateTime")->leftJoin('manager_groups', 'managers.group_id', '=', 'manager_groups.group_id')->take($request->input("offset"))->skip(($request->input("page") -1) * $request->input("offset"))->get();  
             return response()->json([
                 'message' => '成功',
                 "dataInfo"=>array("list"=>$list,'total'=> DB::table('managers')->count(),'page'=>$request->input("page"),"offset"=>$request->input("offset")),
@@ -52,7 +31,7 @@ class ManagerController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * 创建一个管理员
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -60,47 +39,71 @@ class ManagerController extends Controller
     public function store(Request $request)
     {
         $insertDate = array();
-        if($request->input("manager_name")){
-            $this->isUnique('manager_name',$request->input("manager_name"));
-            $insertDate['manager_name'] = $request->input("manager_name");
+        if($request->input("name")){
+            $info = $this->isUnique('manager_name',$request->input("name"));
+            if($info){
+                return response()->json([
+                    'message' => '你传入的参数name的值已存在',
+                    'returnCode' => 1011,
+                ]);
+            }
+            $insertDate['manager_name'] = $request->input("name");
         }else{
             return response()->json([
-                'message' => '缺少必要的参数manager_name',
+                'message' => '缺少必要的参数name',
                 'returnCode' => 1008,
             ]);
         }
-        if($request->input("manager_email")){
-            $this->isUnique('manager_email',$request->input("manager_email"));
-            $insertDate['manager_email'] = $request->input("manager_email");
+        if($request->input("email")){
+            $info = $this->isUnique('manager_email',$request->input("email"));
+            if($info){
+                return response()->json([
+                    'message' => '你传入的参数email的值已存在',
+                    'returnCode' => 1011,
+                ]);
+            }
+            $insertDate['manager_email'] = $request->input("email");
         }else{
             return response()->json([
-                'message' => '缺少必要的参数manager_email',
+                'message' => '缺少必要的参数email',
                 'returnCode' => 1008,
             ]);
         }
-        if($request->input("manager_phone")){
-            $this->isUnique('manager_phone',$request->input("manager_phone"));
-            $insertDate['manager_phone'] = $request->input("manager_phone");
+        if($request->input("phone")){
+            $info = $this->isUnique('manager_phone',$request->input("phone"));
+            if($info){
+                return response()->json([
+                    'message' => '你传入的参数phone的值已存在',
+                    'returnCode' => 1011,
+                ]);
+            }
+            $insertDate['manager_phone'] = $request->input("phone");
         }else{
             return response()->json([
-                'message' => '缺少必要的参数manager_phone',
+                'message' => '缺少必要的参数phone',
                 'returnCode' => 1008,
             ]);
         }
-        if($request->input("manager_password")){
-            $insertDate['manager_password'] = md5($request->input("manager_password"));
+        if($request->input("password")){
+            $insertDate['manager_password'] = md5($request->input("password"));
         }else{
             return response()->json([
-                'message' => '缺少必要的参数manager_password',
+                'message' => '缺少必要的参数password',
                 'returnCode' => 1008,
             ]);
         }
-        if($request->input("manager_truename")){
-            $insertDate['manager_truename'] = $request->input("manager_truename");
+        if($request->input("truename")){
+            $insertDate['manager_truename'] = $request->input("truename");
         }
-        if($request->input("manager_group")){
-            $insertDate['manager_group'] = $request->input("manager_group");
+        if($request->input("groupId")){
+            $insertDate['group_id'] = $request->input("groupId");
+        }else{
+            return response()->json([
+                'message' => '缺少必要的参数groupId',
+                'returnCode' => 1008,
+            ]);
         }
+        $insertDate['manager_id'] = md5(Str::uuid());
         $insertDate['manager_isenabled'] = 1;
         $insertDate['manager_register_time'] = date('Y-m-d H:i:s', time());
         $result = DB::table('managers')->insert($insertDate);
@@ -120,53 +123,7 @@ class ManagerController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Request $request)
-    {
-        if(!$request->input("manager_id")){
-            return response()->json([
-                'message' => '缺少必要的参数manager_id',
-                'returnCode' => 1008,
-            ]);
-        }else{
-            $managerInfo = DB::table('managers')->where('id', $request->input("manager_id"))->select('id as manager_id','manager_name','manager_email','manager_phone','manager_truename','manager_group', DB::raw('if(manager_isenabled =1,"启用","禁用") as manager_isenabled'),'manager_lastlogin_time','manager_lastlogin_ip','manager_register_time','manager_update_time','manager_disabled_description','manager_disabled_time')->first();
-            if($managerInfo){
-                $tempList = array();
-                if(strpos($managerInfo->manager_group,',')){
-                    $tempList = explode(',',$managerInfo->manager_group);
-                }else{
-                    array_push($tempList,$managerInfo->manager_group);
-                }
-                $result = array();
-                foreach($tempList as $v){
-                    foreach($this->groupList as $item){
-                        if($item->id == $v ){
-                            array_push($result,$item->group_name);
-                        }
-                    }
-                }
-                $managerInfo->manager_group_name = implode(',',$result);
-                return response()->json([
-                    'message' => '成功',
-                    'dataInfo'=>$managerInfo,
-                    'returnCode' => 1000,
-                ]);
-            }else{
-                return response()->json([
-                    'message' => '没有查询到相应的信息',
-                    'dataInfo'=>'',
-                    'returnCode' => 1001,
-                ]);
-            }
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
+     * 更新管理员的信息
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -175,42 +132,46 @@ class ManagerController extends Controller
     public function update(Request $request)
     {   
         $updateDate = array();
-        if(!$request->input("manager_id")){
+        if(!$request->input("id")){
             return response()->json([
-                'message' => '缺少必要的参数manager_id',
+                'message' => '缺少必要的参数id',
                 'returnCode' => 1008,
             ]);
         }else{
-            if($request->input("manager_name")){
-                $this->isUnique('manager_name',$request->input("manager_name"));
-                $updateDate['manager_name'] = $request->input("manager_name");
+            $userInfo = (Array)DB::table('managers')->select("manager_name","manager_email","manager_phone","manager_password","manager_truename","group_id","manager_isEnabled","manager_disabled_description","manager_disabled_time")->where('manager_id', $request->input("id"))->first();
+            if(!$userInfo){
+                return response()->json([
+                    'message' => '你传入的id有误',
+                    'returnCode' => 1008,
+                ]);
             }
-            if($request->input("manager_email")){
-                $this->isUnique('manager_email',$request->input("manager_email"));
-                $updateDate['manager_email'] = $request->input("manager_email");
+            if($request->input("name")){
+                $updateDate['manager_name'] = $request->input("name");
             }
-            if($request->input("manager_phone")){
-                $this->isUnique('manager_phone',$request->input("manager_phone"));
-                $updateDate['manager_phone'] = $request->input("manager_phone");
+            if($request->input("email")){
+                $updateDate['manager_email'] = $request->input("email");
             }
-            if($request->input("manager_password")){
-                $updateDate['manager_password'] = md5($request->input("manager_password"));
+            if($request->input("phone")){
+                $updateDate['manager_phone'] = $request->input("phone");
             }
-            if($request->input("manager_truename")){
-                $updateDate['manager_truename'] = $request->input("manager_truename");
+            if($request->input("password")){
+                $updateDate['manager_password'] = md5($request->input("password"));
             }
-            if($request->input("manager_group")){
-                $updateDate['manager_group'] = $request->input("manager_group");
+            if($request->input("truename")){
+                $updateDate['manager_truename'] = $request->input("truename");
             }
-            if($request->input("manager_isenabled")){
-                $updateDate['manager_isenabled'] = $request->input("manager_isenabled") == "启用" ? 1 : 0;
-                if($updateDate['manager_isenabled'] == 0){
-                    if($request->input("manager_disabled_description")){
-                        $updateDate['manager_disabled_description'] = $request->input("manager_disabled_description");
+            if($request->input("groupId")){
+                $updateDate['group_id'] = $request->input("groupId");
+            }
+            if($request->input("isEnabled") || $request->input("isEnabled") == 0 ){
+                $updateDate['manager_isEnabled'] = $request->input("isEnabled");
+                if($updateDate['manager_isEnabled'] == 0){
+                    if($request->input("disabledDescription")){
+                        $updateDate['manager_disabled_description'] = $request->input("disabledDescription");
                         $updateDate['manager_disabled_time'] = date('Y-m-d H:i:s', time());
                     }else{
                         return response()->json([
-                            'message' => '缺少必要的参数manager_disabled_description',
+                            'message' => '缺少必要的参数disabledDescription',
                             'returnCode' => 1008,
                         ]);
                     }
@@ -219,20 +180,40 @@ class ManagerController extends Controller
                     $updateDate['manager_disabled_time'] = null;
                 }
             }
-            $updateDate['manager_update_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('managers')->where('id', $request->input("manager_id"))->update($updateDate);
-            if($result){
+            $updateData = $this->isChange($updateDate,$userInfo);
+            if(!count($updateData)){
                 return response()->json([
-                    'message' => '修改成功',
+                    'message' => '没有要修改的数据',
                     'dataInfo'=>'',
                     'returnCode' => 1000,
                 ]);
             }else{
-                return response()->json([
-                    'message' => '数据更新失败',
-                    'dataInfo'=>'',
-                    'returnCode' => 1003,
-                ]);
+                foreach ($updateData as $key=>$value){
+                    if(in_array($key,['manager_name','manager_email',"manager_phone"])){
+                        $info = $this->isUnique($key,$value);
+                        if($info){
+                            return response()->json([
+                                'message' => '你传入的参数'.substr($key,8).'的值已存在',
+                                'returnCode' => 1011,
+                            ]);
+                        }
+                    }
+                }
+                $updateData['manager_update_time'] = date('Y-m-d H:i:s', time());
+                $result = DB::table('managers')->where('manager_id', $request->input("id"))->update($updateData);
+                if($result){
+                    return response()->json([
+                        'message' => '修改成功',
+                        'dataInfo'=>'',
+                        'returnCode' => 1000,
+                    ]);
+                }else{
+                    return response()->json([
+                        'message' => '数据更新失败',
+                        'dataInfo'=>'',
+                        'returnCode' => 1003,
+                    ]);
+                }
             }
         }
     }
@@ -245,13 +226,13 @@ class ManagerController extends Controller
      */
     public function destroy(Request $request)
     {
-        if(!$request->input("manager_id")){
+        if(!$request->input("id")){
             return response()->json([
-                'message' => '缺少必要的参数manager_id',
+                'message' => '缺少必要的参数id',
                 'returnCode' => 1008,
             ]);
         }else{
-            $result = DB::table('managers')->where('id', $request->input("manager_id"))->delete();
+            $result = DB::table('managers')->where('manager_id', $request->input("id"))->delete();
             if($result){
                 return response()->json([
                     'message' => '删除成功',
@@ -260,7 +241,7 @@ class ManagerController extends Controller
                 ]);
             }else{
                 return response()->json([
-                    'message' => '没有查询到相应的信息',
+                    'message' => '没有查询到相应的信息你传入的参数有误',
                     'dataInfo'=>'',
                     'returnCode' => 1001,
                 ]);
@@ -269,13 +250,17 @@ class ManagerController extends Controller
     }
     
     protected function isUnique($field,$value){
-        $result = DB::table('managers')->where($field, $value)->exists();
-        if($result){
-            return response()->json([
-                'message' => '您要修改的数据已经存在',
-                'returnCode' => 1012,
-            ]);
+        return !!DB::table('managers')->where($field, $value)->exists();
+    }
+
+    protected function isChange($arr1,$arr2){
+        $result = array();
+        foreach($arr1 as $key=>$value){
+            if($arr2[$key] != $value){
+                $result[$key] = $value;
+            }
         }
+        return $result;
     }
 
 }
