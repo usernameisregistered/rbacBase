@@ -21,24 +21,22 @@ class CheckRequest
                 'returnCode' =>1004
             ]);
         }else if(!(strpos($request->path(),'login/login') || strpos($request->path(),'login/register'))){
-            if(!$request->input("userId")){
+            if(!$request->header("token")){
                 return response()->json([
-                    'message'=>'缺少必要参数userId',
+                    'message'=>'缺少必要参数token',
                     'returnCode' =>1005
                 ]);
-            }else if(!$request->header("publicArgs")){
-                return response()->json([
-                    'message'=>'缺少公参publicArgs',
-                    'returnCode' =>1005
-                ]);
-            }else if($request->header("publicArgs") != md5($request->input("userId").substr(config('app.key'),7))){
-                return response()->json([
-                    'message'=>'公参publicArgs信息内容有误',
-                    'returnCode' =>1006
-                ]);
-            }else{
-                return $next($request);
             }
+            try {
+                $userInfo = json_decode(decrypt($request->header("token")));
+            } catch (DecryptException $e) {
+                return response()->json([
+                    'message'=>'token无效',
+                    'returnCode' =>1013
+                ]);
+            };
+            $request->headers->set('userInfo',$userInfo);
+            return $next($request);
         }else{
             return $next($request);
         }

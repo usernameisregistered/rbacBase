@@ -25,8 +25,8 @@ class ManagerController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            $list = DB::table('managers')->where('manager_isdelete',0)->select('id as manager_id','manager_name','manager_email','manager_phone','manager_truename','manager_group', DB::raw('if(manager_isenabled =1,"启用","禁用") as manager_isenabled'),'manager_lastlogin_time','manager_lastlogin_ip','manager_register_time')->paginate($request->input("offset"))->toArray();        
-            foreach($list['data'] as $value){
+            $list = DB::table('managers')->where('manager_isdelete',0)->select('id as manager_id','manager_name','manager_email','manager_phone','manager_truename','manager_group', DB::raw('if(manager_isenabled =1,"启用","禁用") as manager_isenabled'),'manager_lastlogin_time','manager_lastlogin_ip','manager_register_time')->take($request->input("offset"))->skip(($request->input("page") -1) * $request->input("offset"))->get();  
+            foreach($list as $value){
                 $tempList = array();
                 if(strpos($value->manager_group,',')){
                     $tempList = explode(',',$value->manager_group);
@@ -45,7 +45,7 @@ class ManagerController extends Controller
             }
             return response()->json([
                 'message' => '成功',
-                "dataInfo"=>$list,
+                "dataInfo"=>array("list"=>$list,'total'=> DB::table('managers')->count(),'page'=>$request->input("page"),"offset"=>$request->input("offset")),
                 'returnCode' => 1000,
             ]);
         } 
@@ -60,86 +60,62 @@ class ManagerController extends Controller
     public function store(Request $request)
     {
         $insertDate = array();
-        if(!$request->input("manager_id")){
+        if($request->input("manager_name")){
+            $this->isUnique('manager_name',$request->input("manager_name"));
+            $insertDate['manager_name'] = $request->input("manager_name");
+        }else{
             return response()->json([
-                'message' => '缺少必要的参数manager_id',
+                'message' => '缺少必要的参数manager_name',
                 'returnCode' => 1008,
             ]);
+        }
+        if($request->input("manager_email")){
+            $this->isUnique('manager_email',$request->input("manager_email"));
+            $insertDate['manager_email'] = $request->input("manager_email");
         }else{
-            if($request->input("manager_name")){
-                $this->isUnique('manager_name',$request->input("manager_name"));
-                $insertDate['updateDate'] = $request->input("manager_name");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_name',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_email")){
-                $this->isUnique('manager_email',$request->input("manager_email"));
-                $insertDate['manager_email'] = $request->input("manager_email");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_email',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_email")){
-                $this->isUnique('manager_email',$request->input("manager_email"));
-                $insertDate['manager_email'] = $request->input("manager_email");
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_email',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_password")){
-                $insertDate['manager_password'] = md5($request->input("manager_password"));
-            }else{
-                return response()->json([
-                    'message' => '缺少必要的参数manager_password',
-                    'returnCode' => 1008,
-                ]);
-            }
-            if($request->input("manager_truename")){
-                $insertDate['manager_truename'] = $request->input("manager_truename");
-            }
-            if($request->input("manager_group")){
-                $insertDate['manager_group'] = $request->input("manager_group");
-            }
-            if($request->input("manager_isenabled")){
-                $insertDate['manager_isenabled'] = $request->input("manager_isenabled");
-                if($insertDate['manager_isenabled'] == 0){
-                    if($request->input("manager_disabled_description")){
-                        $insertDate['manager_disabled_description'] = $request->input("manager_disabled_description");
-                        $insertDate['manager_disabled_time'] = date('Y-m-d H:i:s', time());
-                    }else{
-                        return response()->json([
-                            'message' => '缺少必要的参数manager_disabled_description',
-                            'returnCode' => 1008,
-                        ]);
-                    }
-                }
-            }else{
-                $insertDate['manager_isenabled'] = 1;
-                $insertDate['manager_disabled_description'] = '';
-                $insertDate['manager_disabled_time'] = '';
-            }
-            $insertDate['manager_register_time'] = date('Y-m-d H:i:s', time());
-            $result = DB::table('managers')->insert($insertDate);
-            if($result){
-                return response()->json([
-                    'message' => '添加管理员成功',
-                    'dataInfo'=>'',
-                    'returnCode' => 1000,
-                ]);
-            }else{
-                return response()->json([
-                    'message' => '添加管理员失败',
-                    'dataInfo'=>'',
-                    'returnCode' => 1003,
-                ]);
-            }
+            return response()->json([
+                'message' => '缺少必要的参数manager_email',
+                'returnCode' => 1008,
+            ]);
+        }
+        if($request->input("manager_phone")){
+            $this->isUnique('manager_phone',$request->input("manager_phone"));
+            $insertDate['manager_phone'] = $request->input("manager_phone");
+        }else{
+            return response()->json([
+                'message' => '缺少必要的参数manager_phone',
+                'returnCode' => 1008,
+            ]);
+        }
+        if($request->input("manager_password")){
+            $insertDate['manager_password'] = md5($request->input("manager_password"));
+        }else{
+            return response()->json([
+                'message' => '缺少必要的参数manager_password',
+                'returnCode' => 1008,
+            ]);
+        }
+        if($request->input("manager_truename")){
+            $insertDate['manager_truename'] = $request->input("manager_truename");
+        }
+        if($request->input("manager_group")){
+            $insertDate['manager_group'] = $request->input("manager_group");
+        }
+        $insertDate['manager_isenabled'] = 1;
+        $insertDate['manager_register_time'] = date('Y-m-d H:i:s', time());
+        $result = DB::table('managers')->insert($insertDate);
+        if($result){
+            return response()->json([
+                'message' => '添加管理员成功',
+                'dataInfo'=>'',
+                'returnCode' => 1000,
+            ]);
+        }else{
+            return response()->json([
+                'message' => '添加管理员失败',
+                'dataInfo'=>'',
+                'returnCode' => 1003,
+            ]);
         }
     }
 
@@ -173,7 +149,7 @@ class ManagerController extends Controller
                         }
                     }
                 }
-                $managerInfo->manager_group = implode(',',$result);
+                $managerInfo->manager_group_name = implode(',',$result);
                 return response()->json([
                     'message' => '成功',
                     'dataInfo'=>$managerInfo,
@@ -207,7 +183,7 @@ class ManagerController extends Controller
         }else{
             if($request->input("manager_name")){
                 $this->isUnique('manager_name',$request->input("manager_name"));
-                $updateDate['updateDate'] = $request->input("manager_name");
+                $updateDate['manager_name'] = $request->input("manager_name");
             }
             if($request->input("manager_email")){
                 $this->isUnique('manager_email',$request->input("manager_email"));
@@ -217,6 +193,9 @@ class ManagerController extends Controller
                 $this->isUnique('manager_phone',$request->input("manager_phone"));
                 $updateDate['manager_phone'] = $request->input("manager_phone");
             }
+            if($request->input("manager_password")){
+                $updateDate['manager_password'] = md5($request->input("manager_password"));
+            }
             if($request->input("manager_truename")){
                 $updateDate['manager_truename'] = $request->input("manager_truename");
             }
@@ -224,7 +203,7 @@ class ManagerController extends Controller
                 $updateDate['manager_group'] = $request->input("manager_group");
             }
             if($request->input("manager_isenabled")){
-                $updateDate['manager_isenabled'] = $request->input("manager_isenabled");
+                $updateDate['manager_isenabled'] = $request->input("manager_isenabled") == "启用" ? 1 : 0;
                 if($updateDate['manager_isenabled'] == 0){
                     if($request->input("manager_disabled_description")){
                         $updateDate['manager_disabled_description'] = $request->input("manager_disabled_description");
@@ -236,8 +215,8 @@ class ManagerController extends Controller
                         ]);
                     }
                 }else{
-                    $updateDate['manager_disabled_description'] = '';
-                    $updateDate['manager_disabled_time'] = '';
+                    $updateDate['manager_disabled_description'] = null;
+                    $updateDate['manager_disabled_time'] = null;
                 }
             }
             $updateDate['manager_update_time'] = date('Y-m-d H:i:s', time());

@@ -19,6 +19,7 @@ class ManagersTableSeeder extends Seeder
             'manager_truename'=>'admin',
             'manager_group'=>'100',
             'manager_password'=>md5("12345678"),
+            'manager_isSystem'=>true,
             'manager_register_time'=>now()
         ]);
         DB::table('managers')->insert([

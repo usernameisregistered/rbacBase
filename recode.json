@@ -11,5 +11,6 @@
     {"message":"你已登录，请勿重复登录","returnCode":1009},
     {"message":"你尚未登录，请勿重复登录","returnCode":1010},
     {"message":"您要修改的数据已经存在","returnCode":1011},
-    {"message":"您要修改的数据正在被使用","returnCode":1012}
+    {"message":"您要修改的数据正在被使用","returnCode":1012},
+    {"message":"token无效","returnCode":1013}
 ]

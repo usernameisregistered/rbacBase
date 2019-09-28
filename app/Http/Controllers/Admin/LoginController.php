@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class LoginController extends Controller
 {
     protected $key = '';
+
+    protected $singleSignOn = true;
+
+    protected $expireTime = 30 * 60 * 1000;
     /**
      * Create a new controller instance.
      *
@@ -50,21 +55,25 @@ class LoginController extends Controller
                         'message' => '你的账户已被禁用,禁用原因：' . $users->manager_disabled_description . ';禁用时间：' . $users->manager_disabled_time . '请联系管理员解除禁用',
                         'returnCode' => 1002,
                     ]);
-                } else if($users->is_login == 1){
+                } else if($this->singleSignOn && $users->is_login == 1){
                     return response()->json([
-                        'message' => '你已登录，请勿重复登录',
+                        'message' => '你的账户与'.$users->manager_lastlogin_time.'在'.$users->manager_lastlogin_ip.'已登录，请勿重复登录',
                         'returnCode' => 1009,
                     ]);
                 }else if ($users->manager_isenabled == 1) {
-                    $manager_token = md5($users->id.$this->key);
                     $clientIp = $request->getClientIp();
                     $currentTime = time();
-                    $result = DB::table('managers')->where('id', $users->id)->update(['manager_lastlogin_time' => date('Y-m-d H:i:s', $currentTime), 'manager_lastlogin_ip' => $clientIp, 'manager_token' => $manager_token,'is_login'=>1]);
+                    $tokenInfo = array("createTime"=>$currentTime,'expireTime'=>$this->expireTime,'userInfo'=>array('manager_id' => $users->id,'manager_name' => $users->manager_name,'manager_email' => $users->manager_email,'manager_phone' => $users->manager_phone,'manager_group' => $users->manager_group));
+                    $token = encrypt(json_encode($tokenInfo));
+                    $updataData = array('manager_lastlogin_time' => date('Y-m-d H:i:s', $currentTime), 'manager_lastlogin_ip' => $clientIp);
+                    if($this->singleSignOn){
+                        $updataData['is_login'] = 1;
+                    }
+                    $result = DB::table('managers')->where('id', $users->id)->update($updataData);
                     if ($result) {
-                        $_SERVER['publicArgs']= $manager_token;
                         return response()->json([
                             'message' => '成功',
-                            'returnCode' => 1009,
+                            'returnCode' => 1000,
                             "dataInfo"=>[
                                 'manager_id' => $users->id,
                                 'manager_name' => $users->manager_name,
@@ -74,7 +83,7 @@ class LoginController extends Controller
                                 'manager_group' => $users->manager_group,
                                 'manager_lastlogin_time' => $currentTime,
                                 'manager_lastlogin_ip' => $clientIp,
-                                'manager_token' => $manager_token,
+                                'token' => $token,
                                 'manager_register_time' => $users->manager_register_time,
                             ]
                         ]);
@@ -87,7 +96,7 @@ class LoginController extends Controller
                 }
             } else {
                 return response()->json([
-                    'message' => '没有查询到相应的信息',
+                    'message' => '账户或者密码输入错误',
                     'returnCode' => 1001,
                 ]);
             }
