@@ -13,6 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(ManagerGroupsTableSeeder::class);
         $this->call(ManagersTableSeeder::class);
-        $this->call(ModulesTableSeeder::class);
+        // $this->call(ModulesTableSeeder::class);
     }
 }
