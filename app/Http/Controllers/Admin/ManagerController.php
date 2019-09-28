@@ -21,7 +21,7 @@ class ManagerController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            $list = DB::table('managers')->select('manager_id as id','manager_name as name','manager_email as email','manager_phone as phone','manager_truename as truename','manager_groups.group_name as groupNname', DB::raw('if(manager_isenabled =1,"启用","禁用") as isEnabled'),"manager_disabled_description as disabledDdescription","manager_disabled_time as disabledTime",'manager_lastlogin_time as lastLoginTime','manager_lastlogin_ip as lastLoginIP','manager_register_time as registerTime',"manager_update_time as updateTime")->leftJoin('manager_groups', 'managers.group_id', '=', 'manager_groups.group_id')->take($request->input("offset"))->skip(($request->input("page") -1) * $request->input("offset"))->get();  
+            $list = DB::table('managers')->select('manager_id as id','manager_name as name','manager_email as email','manager_phone as phone','manager_truename as truename','manager_groups.group_name as groupNname', DB::raw('if(manager_isenabled =1,"启用","禁用") as isEnabled'),"manager_disabled_description as disabledDdescription","manager_disabled_time as disabledTime",'manager_lastlogin_time as lastLoginTime','manager_lastlogin_ip as lastLoginIP','manager_register_time as registerTime',"manager_update_time as updateTime")->leftJoin('manager_groups', 'managers.group_id', '=', 'manager_groups.group_id')->orderBy('manager_register_time', 'desc')->take($request->input("offset"))->skip(($request->input("page") -1) * $request->input("offset"))->get();  
             return response()->json([
                 'message' => '成功',
                 "dataInfo"=>array("list"=>$list,'total'=> DB::table('managers')->count(),'page'=>$request->input("page"),"offset"=>$request->input("offset")),
@@ -232,13 +232,31 @@ class ManagerController extends Controller
                 'returnCode' => 1008,
             ]);
         }else{
-            $result = DB::table('managers')->where('manager_id', $request->input("id"))->delete();
-            if($result){
-                return response()->json([
-                    'message' => '删除成功',
-                    'dataInfo'=>'',
-                    'returnCode' => 1000,
-                ]);
+            $result = (Array)DB::table('managers')->where('manager_id', $request->input("id"))->first();
+            if(!$result){
+                if($result["manager_isSystem"] == 1){
+                    return response()->json([
+                        'message' => '你无法删除内置账户',
+                        'dataInfo'=>'',
+                        'returnCode' => 1003,
+                    ]); 
+                }else{
+                    $res = DB::table('managers')->where('manager_id', $request->input("id"))->delete();
+                    if($res){
+                        return response()->json([
+                            'message' => '删除成功',
+                            'dataInfo'=>'',
+                            'returnCode' => 1000,
+                        ]);
+                    }else{
+                        return response()->json([
+                            'message' => '删除失败',
+                            'dataInfo'=>'',
+                            'returnCode' => 1003,
+                        ]);
+                    }
+                }
+                
             }else{
                 return response()->json([
                     'message' => '没有查询到相应的信息你传入的参数有误',
